@@ -10,6 +10,7 @@ matplotlib = "*"
 scipy = "*"
 geopy = "*"
 seaborn = "*"
+stravalib = "*"
 
 [dev-packages]
 
