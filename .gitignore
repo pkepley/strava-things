@@ -3,3 +3,5 @@ config.ini
 one_time.py
 access_token.pickle
 *.db
+scripts
+*__pycache__
