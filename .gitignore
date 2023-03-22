@@ -5,3 +5,4 @@ access_token.pickle
 *.db
 scripts
 *__pycache__
+log
