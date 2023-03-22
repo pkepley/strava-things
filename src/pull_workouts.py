@@ -1,25 +1,33 @@
-from time import time
+import time
+from datetime import datetime, timedelta
 import pickle
 import pandas as pd
 from stravalib.client import Client
 import build_db as bdb
-from config_reader import get_strava_config
+from config_reader import get_strava_config, get_db_config
 
 
-# get the configuration
+# TODO: this script probably should be converted into
+#       a few functions, possibly bundled into a class
+
+# get the strava configuration
 cfg = get_strava_config()
 client_id = cfg['client_id']
 client_secret = cfg['client_secret']
 access_token_path = cfg['access_token_path']
+days_before_limit = cfg['days_before_limit']
+
+# get the db configuration
+cfg = get_db_config()
+db_path = cfg['db_path']
 
 # set up the client
 client = Client()
 
-# TODO: should
 with open(access_token_path, 'rb') as f:
     access_token = pickle.load(f)
 
-if time() > access_token['expires_at']:
+if time.time() > access_token['expires_at']:
     print('Token has expired, refreshing')
     refresh_response = client.refresh_access_token(
         client_id=client_id,
@@ -46,7 +54,11 @@ else:
     client.token_expires_at = access_token['expires_at']
 
 # get activities
-activities = client.get_activities(after = '2022-01-01')
+after_limit = datetime.now() - timedelta(days=days_before_limit)
+after_limit = after_limit.strftime("%Y-%m-%d")
+print(f"Pulling activities after {after_limit}")
+
+activities = client.get_activities(after = after_limit)
 activities = [activity.to_dict() for activity in activities]
 
 activity_cols = [
@@ -76,13 +88,13 @@ df_activities.drop(columns=['start_datetime', 'start_date'], inplace=True)
 df_activities.rename(columns={'start_date_utc': 'start_datetime_utc', 'id': 'activity_id'}, inplace=True)
 
 bdb.create_db()
-new_activity_ids, _ = bdb.append_exercise_summary(df_activities)
+new_activity_ids, _ = bdb.append_exercise_summary(df_activities, db_path=db_path)
 
 # get the *last* activity
 stream_columns = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth']
 
 for activity_id in new_activity_ids:
-    activity_id_in_db = bdb.existing_activity_ids([activity_id], "exercise", db_path="my_strava.db")
+    activity_id_in_db = bdb.existing_activity_ids([activity_id], "exercise", db_path=db_path)
 
     if activity_id_in_db:
         print(f"Activity {activity_id} already in db! Skipping")
@@ -108,4 +120,4 @@ for activity_id in new_activity_ids:
     df_activity['id'] = activity_id
     df_activity.rename(columns={'altitude': 'elevation', 'id': 'activity_id'}, inplace=True)
 
-    bdb.append_exercises(df_activity)
+    bdb.append_exercises(df_activity, db_path=db_path)
