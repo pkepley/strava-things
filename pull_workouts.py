@@ -1,29 +1,29 @@
-import time
+from time import time
 import pickle
-import requests
 import pandas as pd
-import sqlite3
 from stravalib.client import Client
-#import build_db as bd
 import build_db as bdb
-import config
+from config_reader import get_strava_config
 
 
-# TODO: should be configurable
-access_token_path = 'access_token.pickle'
+# get the configuration
+cfg = get_strava_config()
+client_id = cfg['client_id']
+client_secret = cfg['client_secret']
+access_token_path = cfg['access_token_path']
 
-#
+# set up the client
 client = Client()
 
 # TODO: should
 with open(access_token_path, 'rb') as f:
     access_token = pickle.load(f)
 
-if time.time() > access_token['expires_at']:
+if time() > access_token['expires_at']:
     print('Token has expired, refreshing')
     refresh_response = client.refresh_access_token(
-        client_id=config.CLIENT_ID,
-        client_secret=config.CLIENT_SECRET,
+        client_id=client_id,
+        client_secret=client_secret,
         refresh_token=access_token['refresh_token']
     )
     access_token = refresh_response
@@ -46,17 +46,13 @@ else:
     client.token_expires_at = access_token['expires_at']
 
 # get activities
-activities = client.get_activities(after = '2023-01-01')
+activities = client.get_activities(after = '2022-01-01')
 activities = [activity.to_dict() for activity in activities]
 
 activity_cols = [
     'name', 'id', 'distance', 'moving_time', 'elapsed_time',
-    'total_elevation_gain', 'elev_high', 'elev_low',
-    'type',
-    'start_date',
-    'timezone',
-    'start_latlng',
-    'end_latlng'
+    'total_elevation_gain', 'elev_high', 'elev_low', 'type', 'start_date',
+    'timezone', 'start_latlng', 'end_latlng'
 ]
 
 df_activities = pd.DataFrame.from_dict({

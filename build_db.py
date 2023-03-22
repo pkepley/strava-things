@@ -1,8 +1,11 @@
 import sqlite3
 import pandas as pd
+from config_reader import get_db_config
+
+db_path = get_db_config()['db_path']
 
 # build the db
-def create_exercise_summary_table(db_path="my_strava.db"):
+def create_exercise_summary_table(db_path=db_path):
     with sqlite3.connect(db_path) as conn:
         cur = conn.cursor()
 
@@ -27,7 +30,8 @@ def create_exercise_summary_table(db_path="my_strava.db"):
             );
         """)
 
-def existing_activity_ids(proposed_ids, table_name, db_path="my_strava.db"):
+
+def existing_activity_ids(proposed_ids, table_name, db_path=db_path):
     with sqlite3.connect(db_path) as conn:
         cur = conn.cursor()
         #conn.set_trace_callback(print)
@@ -45,7 +49,7 @@ def existing_activity_ids(proposed_ids, table_name, db_path="my_strava.db"):
     return [k for k in proposed_ids if k in existing_ids]
 
 
-def append_exercise_summary(df, db_path="my_strava.db"):
+def append_exercise_summary(df, db_path=db_path):
     proposed_ids = list(set([int(x) for x in df['activity_id'].to_numpy()]))
     old_ids = existing_activity_ids(proposed_ids, 'exercise_summary', db_path)
     new_ids = df['activity_id'][~df['activity_id'].isin(old_ids)]
@@ -66,7 +70,7 @@ def append_exercise_summary(df, db_path="my_strava.db"):
     return new_ids, old_ids
 
 
-def create_exercise_table(db_path="my_strava.db"):
+def create_exercise_table(db_path=db_path):
     with sqlite3.connect(db_path) as conn:
         cur = conn.cursor()
 
@@ -83,7 +87,7 @@ def create_exercise_table(db_path="my_strava.db"):
         """)
 
 
-def append_exercises(df, db_path="my_strava.db"):
+def append_exercises(df, db_path=db_path):
     proposed_ids = list(set([int(x) for x in df['activity_id'].to_numpy()]))
     old_ids = existing_activity_ids(proposed_ids, 'exercise', db_path)
     new_ids = df['activity_id'][~df['activity_id'].isin(old_ids)]
@@ -100,6 +104,6 @@ def append_exercises(df, db_path="my_strava.db"):
             )
 
 
-def create_db(db_path="my_strava.db"):
+def create_db(db_path=db_path):
     create_exercise_summary_table(db_path)
     create_exercise_table(db_path)
