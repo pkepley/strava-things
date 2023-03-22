@@ -1,8 +1,12 @@
+from pathlib import Path
 from configparser import ConfigParser
+
+# config file should be in parent to src folder
+config_path = Path(__file__).resolve().parents[1]/"config.ini"
 
 def get_strava_config():
     config = ConfigParser()
-    config.read("config.ini")
+    config.read(config_path)
     cfg = {}
 
     cfg['client_id'] = int(config['strava']['client_id'])
@@ -14,7 +18,7 @@ def get_strava_config():
 
 def get_db_config():
     config = ConfigParser()
-    config.read("config.ini")
+    config.read(config_path)
     dbconf = config['database']
 
     cfg = {}
