@@ -8,6 +8,7 @@ pandas = "*"
 numpy = "*"
 stravalib = "*"
 matplotlib = "*"
+fastapi = "*"
 
 [dev-packages]
 
