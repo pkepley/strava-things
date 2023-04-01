@@ -27,8 +27,9 @@ client = Client()
 with open(access_token_path, 'rb') as f:
     access_token = pickle.load(f)
 
-if time.time() > access_token['expires_at']:
-    print('Token has expired, refreshing')
+if time.time() > access_token['expires_at'] or\
+   access_token['expires_at'] - time.time() < 30:
+    print('Token has expired (or will expire soon). Refreshing')
     refresh_response = client.refresh_access_token(
         client_id=client_id,
         client_secret=client_secret,
