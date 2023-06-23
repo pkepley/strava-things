@@ -6,11 +6,16 @@ name = "pypi"
 [packages]
 pandas = "*"
 numpy = "*"
-stravalib = "*"
 matplotlib = "*"
 fastapi = "*"
+scipy = "*"
+stravalib="==1.2.0"
+
+[optional-packages]
+scikit-learn = "*"
+joblib="*"
 
 [dev-packages]
 
-[requires]
-python_version = "3.9"
+#[requires]
+#python_version = "3.11"
