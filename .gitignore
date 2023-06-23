@@ -6,3 +6,7 @@ access_token.pickle
 scripts
 *__pycache__
 log
+*.csv
+*.joblib
+*.png
+*.mp4
