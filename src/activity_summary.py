@@ -364,7 +364,7 @@ anim = FuncAnimation(
 
 if save_animation:
     print("Saving animation to disk! This may take a while!")
-    anim.save("my-output.mp4", dpi=600, bitrate=-1)
+    anim.save("activity_animation.mp4", dpi=600, bitrate=-1)
     print("Done!")
 
 if not run_headless:
