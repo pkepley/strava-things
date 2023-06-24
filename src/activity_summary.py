@@ -22,6 +22,8 @@ from CurveClusterer import CurveClusterer
 
 ## Parse Command Line Configuration Parameters
 parser = argparse.ArgumentParser(description='Summarize activities.')
+parser.add_argument('--limit-count', dest='n_activity_max', action='store',
+                    type=int, default=None)
 parser.add_argument('--estimate-pi', dest='run_pi_estimation', action='store_const',
                     const=True, default=False,
                     help='estimate pi')
@@ -40,6 +42,7 @@ parser.add_argument('--run-headless', dest='run_headless', action='store_const',
 args = parser.parse_args()
 
 # extract the parser parameters
+n_activity_max    = args.n_activity_max
 run_pi_estimation = args.run_pi_estimation
 skip_clustering   = args.skip_clustering
 save_animation    = args.save_animation
@@ -64,12 +67,15 @@ with sqlite3.connect(db_path) as conn:
         """
         select * from exercise_summary
         where date >= ?
-        order by date
+        order by start_datetime_utc
         """,
         conn,
         params=('2022-12-30',)
     )
     dfe_summary.set_index('activity_id', inplace=True)
+
+    if n_activity_max is not None:
+        dfe_summary = dfe_summary.iloc[:n_activity_max]
 
     dfe_summary['start_datetime_utc'] = pd.to_datetime(
         dfe_summary['start_datetime_utc']
@@ -156,6 +162,15 @@ df_summ = df_summ.merge(
 
 # activities
 activities = df_summ.sort_values('start_datetime_utc').activity_id.to_list()
+
+# if we estimated pi for each run... let the user know the result!
+if run_pi_estimation:
+    pi_est = df_summ['pi_est'].mean()
+    n_pi_est = np.sum(df_summ['n_signed_loops'] != 0)
+    print(f"We estimated pi from {n_pi_est} activities")
+    print(f"\t- to 20 decimal places pi estimate: {pi_est:0.20f}")
+    print(f"\t- to 20 decimal places pi is      : {np.pi:0.20f}")
+    print(f"\t- to 20 decimal places error is   : {pi_est-np.pi:0.20f}")
 
 # deal with the clusterer - used to specify the color scheme, basically...
 if clusterer_path is None or skip_clustering:
@@ -255,6 +270,7 @@ else:
     cs_map = {a:c for a,c in zip(df_lbl.activity_id, df_lbl.cluster)}
     cs = [cmap(lbl_remap[cs_map[a]] / cc.n_cluster) for a in activities]
 
+
 # Plot summary statistics
 plt.style.use('dark_background')
 n_ax = 5 if run_pi_estimation else 4
@@ -301,6 +317,18 @@ if save_figures:
         fig_name = f'fig_{i:02d}_{ax_names[i]}.png'
         fig.savefig(fig_name, bbox_inches=extent.expanded(1.1, 1.2))
 
+
+if run_pi_estimation:
+    fig, ax = plt.subplots()
+    ax.hist(df_summ['pi_est'][df_summ['n_signed_loops'] != 0] - np.pi)
+    ax.set_title(r"$\pi$ Estimate Error Histogram")
+    ax.set_ylabel("Count")
+    ax.set_xlabel("Estimation Error")
+
+if run_pi_estimation and save_figures:
+    fig.savefig(f'fig_{6:02d}_pi_error_histogram.png')
+
+
 # animate
 if usual_route_file is not None:
     if usual_route_file.exists():
@@ -326,12 +354,12 @@ activity_anim = ActivityAnimator(
 anim_interval = 50 if save_animation else 10
 
 anim = FuncAnimation(
-   activity_anim.fig,
-   activity_anim.anim_update,
-   init_func=activity_anim.anim_init,
-   frames=activity_anim.nt,
-   interval=anim_interval,
-   blit=True
+    activity_anim.fig,
+    activity_anim.anim_update,
+    init_func=activity_anim.anim_init,
+    frames=activity_anim.nt,
+    interval=anim_interval,
+    blit=True
 )
 
 if save_animation:
