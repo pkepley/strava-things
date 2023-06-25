@@ -326,7 +326,7 @@ if run_pi_estimation:
     ax.set_xlabel("Estimation Error")
 
 if run_pi_estimation and save_figures:
-    fig.savefig(f'fig_{6:02d}_pi_error_histogram.png')
+    fig.savefig(f'fig_{5:02d}_pi_error_histogram.png')
 
 
 # animate
